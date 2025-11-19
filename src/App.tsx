@@ -1,12 +1,16 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
+import AIChatPage from './pages/AIChatPage'
+import ChatGPTPage from './pages/ChatGPTPage'
 import Navbar from './components/Navbar'
 
-function App() {
+function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [activeCopilot, setActiveCopilot] = useState<'co-pilot' | 'co-pilot2'>('co-pilot')
+  const navigate = useNavigate()
 
   // Check for existing auth token on mount
   useEffect(() => {
@@ -18,6 +22,7 @@ function App() {
 
   const handleLogin = () => {
     setIsAuthenticated(true)
+    navigate('/dashboard')
   }
 
   const handleLogout = () => {
@@ -25,6 +30,7 @@ function App() {
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
     setIsAuthenticated(false)
+    navigate('/')
   }
 
   const toggleChat = () => {
@@ -32,32 +38,71 @@ function App() {
   }
 
   return (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <LoginPage onLogin={handleLogin} />
+          )
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <LoginPage onLogin={handleLogin} />
+          )
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          isAuthenticated ? (
+            <HomePage 
+              isChatOpen={isChatOpen} 
+              onToggleChat={toggleChat}
+              activeCopilot={activeCopilot}
+              onCopilotChange={setActiveCopilot}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          isAuthenticated ? (
+            <AIChatPage isChatOpen={isChatOpen} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route
+        path="/chat-gpt"
+        element={
+          isAuthenticated ? (
+            <ChatGPTPage onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+    </Routes>
+  )
+}
+
+function App() {
+  return (
     <Router>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/" replace />
-            ) : (
-              <LoginPage onLogin={handleLogin} />
-            )
-          }
-        />
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              <>
-                <Navbar isChatOpen={isChatOpen} onToggleChat={toggleChat} onLogout={handleLogout} />
-                <HomePage isChatOpen={isChatOpen} />
-              </>
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-      </Routes>
+      <AppContent />
     </Router>
   )
 }
